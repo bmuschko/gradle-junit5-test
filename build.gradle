@@ -12,7 +12,6 @@ dependencies {
     compile gradleApi()
     compile "org.junit.platform:junit-platform-engine:$junitVersion"
     compile "org.junit.platform:junit-platform-launcher:$junitVersion"
-    runtime "org.junit.jupiter:junit-jupiter-engine:5.0.0-M3"
     testCompile gradleTestKit()
     testCompile('org.spockframework:spock-core:1.0-groovy-2.4') {
         exclude module: 'groovy-all'

@@ -43,8 +43,13 @@ class JUnit5TestFunctionalTest extends Specification {
                 mavenCentral()
             }
 
+            configurations {
+                junitEngine
+            }
+
             dependencies {
                 testCompile 'org.junit.jupiter:junit-jupiter-api:5.0.0-M3'
+                junitEngine 'org.junit.jupiter:junit-jupiter-engine:5.0.0-M3'
             }
             
             test.enabled = false

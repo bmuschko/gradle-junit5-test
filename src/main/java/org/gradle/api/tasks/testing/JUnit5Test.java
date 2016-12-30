@@ -2,6 +2,7 @@ package org.gradle.api.tasks.testing;
 
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
+import org.gradle.api.file.FileCollection;
 import org.gradle.api.plugins.JavaPluginConvention;
 import org.gradle.api.tasks.SourceSet;
 import org.gradle.api.tasks.TaskAction;
@@ -29,13 +30,17 @@ public class JUnit5Test extends DefaultTask {
 
     @TaskAction
     public void executeTests() {
-        Set<Path> launcherRuntimeClasspath = createLauncherRuntimeClasspath();
+        Set<Path> testDiscoveryClasspath = determineTestDiscoveryClasspath();
+        Set<Path> junitEngineClasspath = determineJUnitEngineClasspath();
+        Set<Path> runtimeClasspath = new HashSet<>();
+        runtimeClasspath.addAll(testDiscoveryClasspath);
+        runtimeClasspath.addAll(junitEngineClasspath);
         ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
-        ClassLoader customClassLoader = createCustomClassLoader(launcherRuntimeClasspath, originalClassLoader);
+        ClassLoader customClassLoader = createCustomClassLoader(runtimeClasspath, originalClassLoader);
 
         try {
             Thread.currentThread().setContextClassLoader(customClassLoader);
-            TestExecutionSummary summary = executeTests(launcherRuntimeClasspath);
+            TestExecutionSummary summary = executeTests(testDiscoveryClasspath);
             summary.printTo(new PrintWriter(System.out));
 
             if (summary.getTotalFailureCount() > 0) {
@@ -66,12 +71,22 @@ public class JUnit5Test extends DefaultTask {
         }
     }
 
-    private Set<Path> createLauncherRuntimeClasspath() {
+    private Set<Path> determineTestDiscoveryClasspath() {
         JavaPluginConvention javaConvention = getProject().getConvention().getPlugin(JavaPluginConvention.class);
         SourceSet testSourceSet = javaConvention.getSourceSets().getByName(SourceSet.TEST_SOURCE_SET_NAME);
         File classesDir = testSourceSet.getOutput().getClassesDir();
         Set<Path> paths = new HashSet<>();
         paths.add(Paths.get(classesDir.toURI()));
+        return paths;
+    }
+
+    private Set<Path> determineJUnitEngineClasspath() {
+        FileCollection junitEngineFiles = getProject().getConfigurations().getByName("junitEngine").getIncoming().getFiles();
+        Set<Path> paths = new HashSet<>();
+
+        for (File file : junitEngineFiles.getFiles()) {
+            paths.add(Paths.get(file.toURI()));
+        }
         return paths;
     }
 
